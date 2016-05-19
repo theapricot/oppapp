@@ -1,0 +1,32 @@
+/* Sticky footer styles
+-------------------------------------------------- */
+html {
+  position: relative;
+  min-height: 100%;
+}
+body {
+  /* Margin bottom by footer height */
+  margin-bottom: 60px;
+}
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  /* Set the fixed height of the footer here */
+  height: 60px;
+  background-color: #f5f5f5;
+}
+.top-buffer { margin-top:20px; }
+.med-buffer { margin-top:10px; }
+.med-lbuffer { margin-left:10px; }
+.sm-buffer { margin-top:5px; }
+
+.vcenter {
+    display: inline-block;
+    vertical-align: middle;
+    float: none;
+}
+@font-face {
+    font-family: homestead;
+    src: /static/Homestead-Display.otf;
+}

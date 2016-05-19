@@ -1,0 +1,90 @@
+{% extends "layout.html" %}
+{% block body %}
+<title>{{ usr.fname }} {{ usr.lname }} - OppApp</title>
+<form action="" method=post class="form-horizontal">
+	
+<div class="col-md-6 col-md-offset-3">
+	<div class="panel panel-default">
+		
+		<table class="table">
+		<tr>
+			<td><img src="https://my.gcc.edu/icsfileservershare/icsphotos/{{ usr.gccid }}.jpg" class="img-rounded" height="150"></td>
+			<td><h2>{{ usr.fname}} {{ usr.lname }}</h2><a href="mailto:{{ usr.email }}">{{ usr.email }}</a><br>
+			
+			</td>
+		</tr>
+		{% if g.user.id == usr.id %}
+		<tr>
+			<td style="vertical-align:middle"><b>Password:</b></td>
+			<td>
+				<button type="button" class="btn btn-primary btn-sm pull-right" data-toggle="modal" data-target="#chgpwd">Change Password</button>
+			</td>
+		</tr>
+		{% if g.user.is_editor() %}
+		<tr>
+			<td style="vertical-align:middle"><b>When Emailing Techs:</b></td>
+			<td>
+				<div class="btn-group btn-group-sm pull-right">
+				    <button name="bcc" value="off" type="submit" class="btn btn-default {% if not usr.get_setting('bcc') %}active{% endif %}"> CC</button>
+				    <button name="bcc" value="on" type="submit" class="btn btn-default {% if usr.get_setting('bcc') %}active{% endif %}"> BCC</button>
+				</div>
+			</td>
+		</tr>
+		{% endif %}
+		<div id="chgpwd" class="modal fade" role="dialog">
+		  <div class="modal-dialog">
+		
+		    <!-- Modal content-->
+		    <div class="modal-content">
+		      <div class="modal-header">
+		        <button type="button" class="close" data-dismiss="modal">&times;</button>
+		        <h4 class="modal-title">Change Password</h4>
+		      </div>
+		      <div class="modal-body">
+				
+					<label for="pwd">Old Password:</label>
+				    <input type="password" class="form-control" id="oldpwd" name="oldpwd">
+				
+					<label for="newpwd1">New Password:</label>
+				    <input type="password" class="form-control" id="newpwd1" name="newpwd1">
+				
+					<label for="newpwd2">New Password Again:</label>
+				    <input type="password" class="form-control" id="newpwd2" name="newpwd2">
+		
+				
+		      </div>
+		      <div class="modal-footer">
+				  <button type="submit" name="changepassword" class="btn btn-primary">Change</button>
+		          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+		      </div>
+		    </div>
+		
+		  </div>
+		</div>
+		{% endif %}
+		
+		</table>
+	</div>
+	
+	<div class="panel panel-default">
+		<div class="panel-heading"><b>All Techs</b></div>
+		<table class="table">
+			{%- for user in users %}
+			<tr>
+				<td><img src="https://my.gcc.edu/icsfileservershare/icsphotos/{{ user.gccid }}.jpg" class="img-rounded" height="50"></td>
+				<td>{{ user.fname}} <b>{{ user.lname }}</b>
+				{% if user.is_editor() %}<i class="fa fa-star" aria-hidden="true"></i>{% endif %}
+				<br><a href="mailto:{{ user.email }}">{{ user.email }}</a>
+				</td>
+			</tr>
+			{%- endfor %}
+		</table>
+
+	</div>
+	
+
+</div>
+		
+</form>
+
+{% endblock %}

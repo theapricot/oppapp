@@ -1,0 +1,70 @@
+{% extends "layout.html" %}
+{% block body %}
+<title>Create Event - OppApp</title>
+<form action="" method=post class="form-horizontal">
+	  
+<div class="col-md-6 col-md-offset-3">
+	<div class="well well-lg">
+	    <h2>Create Event</h2>
+	    
+	    <label for="title">Name:</label>
+	    <input type="text" id="title" name="title" class="form-control" placeholder="Name" value="{{ request.form.title }}" required="true">
+		
+		<label for="location">Location:</label>
+	    <input type="text" name="location" class="form-control" placeholder="Location" value="{{ request.form.location }}" required>
+	
+		<div class="input-group date" id="date" data-provide="datepicker-inline" data-date-format="mm/dd/yyyy">
+			<input type="hidden" name="date" class="datepicker form-control" placeholder="Date" value="{{ request.form.date }}" required>
+		</div>
+		<script>
+			$('#date').datepicker({
+			    startDate: '+d'
+			})
+		</script>
+	
+		<div class="bootstrap-timepicker timepicker">
+			<label for="timepicker">Start Time:</label>
+			<input name="time" id="timepicker" class="form-control" data-provide="timepicker" data-template="false" 
+			value="{{ request.form.time }}" type="text">
+		</div>
+		
+		<div class="bootstrap-timepicker timepicker">
+			<label for="timepicker2">End Time:</label>
+			<input name="endtime" id="timepicker2" class="form-control" data-provide="timepicker" data-template="false"
+			value="{{ request.form.endtime }}" type="text">
+		</div>
+		<script type="text/javascript">
+			$('#timepicker').timepicker({
+				minuteStep: 1,
+				template: 'false',
+				appendWidgetTo: 'body',
+				showSeconds: false,
+				showMeridian: true,
+				defaultTime: false
+			});
+			$('#timepicker2').timepicker({
+				minuteStep: 1,
+				template: 'false',
+				appendWidgetTo: 'body',
+				showSeconds: false,
+				showMeridian: true,
+				defaultTime: false
+			});
+		</script>
+		
+		<label for="ntechs">Techs Needed:</label>
+		<input id="ntechs" type="text" value="{{ request.form.ntechs }}" name="ntechs" required>
+        <script>
+            $("input[name='ntechs']").TouchSpin();
+        </script>
+        <label for="comment">Extra Information:</label>
+		<textarea class="form-control" rows="5" name="info" id="comment" value="{{ request.form.info }}"></textarea>
+  
+		<br>
+	    <button type="submit" class="btn btn-success">Create Event</button>
+	    <a class="btn btn-default" href="{{ url_for('index') }}">Cancel</a>
+	</div>
+</div>
+</form>
+
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends "layout.html" %}
+{% block body %}
+<title>Events - OppApp</title>
+
+<form action="" method=post>
+	
+		<!-- AVAILABLE EVENTS -->
+		{% if g.user.cansignup %}
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<b>Available Events</b>
+			</div>
+			
+			<table class="table table-hover">
+			      <tr>
+					  {% if g.user.cansignup %}<th></th>{% endif %}
+			        <th>Event</th>
+			        <th>Date</th>
+			        <th>Time</th>
+			        <th>Location</th>
+			      </tr>
+			      {%- for todo in todos %}
+			      <tr>
+					{% if g.user.cansignup %}
+					<td><button name="add" value="{{ todo.id }}" type="submit" class="btn btn-xs btn-success">
+						<i class="fa fa-plus" aria-hidden="true"></i>
+					</button></td>
+					{% endif %}
+					
+					<td>
+					<b>{{ todo.name }}</b>
+					{% if todo.users|length < todo.techsneeded %}
+						<span class="label label-{% if todo.users|length == 0 %}danger{% else %}warning{% endif %}">need {{ todo.techsneeded - todo.users|length }} more</span>
+					{% endif %}
+					<br>
+					<i>{{ todo.info }}</i>
+					</td>
+					
+			        <td><b>{{ todo.get_natural('d') }}</b><br>{{ todo.date.strftime('%a, %b %-d, %Y') }}</td>
+			        <td><b>{{ todo.get_natural('t') }}</b><br>{{ todo.date.strftime('%-I:%M %p') }} - {{ todo.enddate.strftime('%-I:%M %p') }}</td>
+			        <td>{{ todo.desc }}</td>
+			        </tr>
+		
+			      {%- endfor %}
+			</table>
+		 </div>
+   		{% endif %}
+   		
+   		
+   		
+   		<!-- MY EVENTS -->
+   		{% if not g.user.cansignup %}
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<b>My Events</b>
+				<span class="label label-success med-lbuffer">Confirmed, sign-ups are closed.</span>
+		    </div>
+		{% else %}
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<b>My Events</b>
+		    </div>
+		{% endif %}
+		    <table class="table table-hover">
+				<tr>
+					{% if g.user.cansignup %}<th></th>{% endif %}
+					<th>Event</th>
+					<th>Date</th>
+					<th>Time</th>
+					<th>Location</th>
+					{% if not g.user.cansignup %}<th>Techs</th>{% endif %}
+				</tr>
+				{%- for todo in myevents %}
+				<tr>
+					{% if g.user.cansignup %}
+					<td>
+						<button name="drop" value="{{ todo.id }}" type="submit" class="btn btn-xs btn-danger">
+						<i class="fa fa-times" aria-hidden="true"></i>
+						</button>
+					</td>
+					{% endif %}
+					<td>
+						<b>{{ todo.name }}</b>
+						{% if g.user.cansignup %}
+						{% if todo.users|length < todo.techsneeded %}
+						<span class="label label-{% if todo.users|length == 0 %}danger{% else %}warning{% endif %}">need {{ todo.techsneeded - todo.users|length }} more</span>
+						{% endif %}
+						{% endif %}
+						<br>
+						<i>{{ todo.info }}</i>
+							
+					</td>
+					<td><b>{{ todo.get_natural('d') }}</b><br>{{ todo.date.strftime('%a, %b %-d, %Y') }}</td>
+			        <td><b>{{ todo.get_natural('t') }}</b><br>{{ todo.date.strftime('%-I:%M %p') }} - {{ todo.enddate.strftime('%-I:%M %p') }}</td>
+			        <td>{{ todo.desc }}</td>
+					{% if not g.user.cansignup %}
+					<td>
+						{%- for user in todo.users %}
+						<span class="label label-info">{{ user.fname }} {{ user.lname }}</span>
+						{%- endfor %}
+					</td>
+					{% endif %}
+
+				</tr>
+				{%- endfor %}
+		    </table> 
+		</div>
+	</div>
+</form>
+
+{% endblock %}

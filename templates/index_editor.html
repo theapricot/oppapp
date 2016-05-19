@@ -1,0 +1,190 @@
+{% extends "layout.html" %}
+{% block body %}
+<title>All Events - Opp</title>
+
+<form action="" method=post>
+<div class="panel panel-default">
+	<div class="panel-heading" style="height: 60px">
+		<table class="table table-condensed">
+			<thead>
+				<td style="font-size:20px"><b>Upcoming Events</b></td>
+				<td style="text-align:right">	     
+			    {% if allcansignup == True %}
+					<button type="submit" name="togglesignup" class="btn btn-sm btn-default">
+						<span class="text-success"><i class="fa fa-toggle-on" aria-hidden="true"></i> Sign-Ups Open</span>
+					</button>
+				{% else %} 
+					<button type="submit" name="togglesignup" class="btn btn-sm btn-default">
+						<span class="text-danger"><i class="fa fa-toggle-off" aria-hidden="true"></i> Sign-Ups Closed</span>
+					</button>
+				{% endif %}
+				</td>
+			</thead>
+		</table>
+	</div> <!-- end panel heading -->
+   
+    <table class="table table-hover">
+		<thead>
+		<tr>
+			<th>Event (Soonest first)</th>
+			<th>Techs</th>
+        </tr>
+        </thead>
+        {%- for todo in todos %}
+        {% if todo.get_timeline() < 2 %}
+		<tr {% if todo.get_timeline() == 1 %}class="warning"{% endif %}>
+			<td><b><a href="/todos/{{ todo.id }}">{{ todo.name }}
+				<br></a></b>{{ todo.date.strftime('%a, %b %-d, %Y') }}<br><small>{{ todo.get_natural('d') }}</small>
+			</td>
+			
+			<td>
+				<b><span class="label label-{% if todo.users|length == 0 %}danger{% elif todo.users|length < todo.techsneeded %}warning{% else %}success{% endif %}">
+				{{ todo.users|length }} / {{ todo.techsneeded }}</span></b>
+				{% if todo.get_timeline() == 1 %}
+				<span class="label label-warning">In Progress</span>
+				{% endif %}
+				
+				<button type="button" class="btn btn-link btn-xs" data-toggle="modal" data-target="#addto{{ todo.id }}">
+				<i class="fa fa-plus" aria-hidden="true"></i> Add Tech
+				</button>
+				<a class="btn btn-link btn-xs" 
+				href="mailto:{{ g.user.email }}?{% if g.user.get_setting('bcc') %}b{% endif %}cc={%- for user in todo.users %}{{ user.email }},{%- endfor %}&subject={{ todo.name }}">
+				<i class="fa fa-envelope-o" aria-hidden="true"></i>
+				Email Techs</a>
+				
+				<br>
+					
+				{%- for user in todo.users %}
+				<span class="dropdown">
+					<button type="button" name="removefromevent" value="{{ user.id }},{{ todo.id }}" class="btn btn-xs btn-info sm-buffer" data-toggle="dropdown">
+						
+						{{ user.fname }} {{ user.lname }}</button>
+					<ul class="dropdown-menu med-buffer">
+						<li><button class="btn btn-link" type="submit" name="removefromevent" value="{{ user.id }},{{ todo.id }}">
+							<i class="fa fa-times" aria-hidden="true"></i> Remove</button></li>
+						<li class="divider"></li>
+						<li class="dropdown-header">Move To...</li>
+						{%- for todo2 in todos %}
+						{% if not todo2 == todo and todo2.get_timeline() < 2 %}
+						<li><button class="btn btn-link" type="submit" name="movetoevent" value="{{ user.id }},{{ todo.id }},{{ todo2.id }}">{{ todo2.name }}</button></li>
+						{% endif %}
+						{%- endfor %}
+						
+					</ul>
+				
+				</span>		
+				{%- endfor %}</b>
+				
+				<!-- "Add Techs" modal -->
+				<div id="addto{{ todo.id }}" class="modal fade" role="dialog">
+				  <div class="modal-dialog">
+				    <div class="modal-content">
+				      <div class="modal-header">
+				        <button type="button" class="close" data-dismiss="modal">&times;</button>
+				        <h4 class="modal-title">Add to "{{ todo.name }}"</h4>
+				      </div>
+				      <div class="modal-body">
+				        <p>
+				        
+						{%- for user in allusers %}
+							{% if not user in todo.users %}
+								<button type="submit" name="addtoevent" value="{{ user.id }},{{ todo.id }}" class="btn btn-md btn-info sm-buffer">
+								{{ user.fname }} {{ user.lname }}
+								</button>
+							{% endif %}
+						
+						
+						{%- endfor %}</b>
+				        
+				        </p>
+				      </div>
+				      <div class="modal-footer">
+				        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+				      </div>
+				    </div>
+				
+				  </div>
+				</div>
+
+			</td>
+		</tr>
+      {% endif %}
+      {%- endfor %}
+    </table>
+    <div class="panel-footer">
+    <!-- bottom buttons -->
+		<a href="{{ url_for('new') }}" class="btn btn-primary">
+		<i class="fa fa-plus" aria-hidden="true"></i> New Event
+		</a>
+		<div class="btn-group">
+			<a href="{{ url_for('download') }}" class="btn btn-default">
+				<i class="fa fa-table" aria-hidden="true"></i> CSV Receipt
+			</a>
+			<a href="{{ url_for('mailreceipt') }}" class="btn btn-default">
+				<i class="fa fa-envelope-o"></i> Email Receipt
+			</a>
+		</div>
+    </div>
+    <!-- End of table -->
+    </div>
+    
+    <!-- Past events -->
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<td><h4><b>Past Events</b></h4></td>
+		</div>
+		<table class="table table-hover">
+			<thead>
+				<tr>
+					<td><b>Event</b></td>
+					<td><b>Techs</b></td>
+				</tr>
+			</thead>
+			{%- for todo in todos %}
+			{% if todo.get_timeline() == 2 %}
+			<tr>
+				<td><b>{{ todo.name }}
+					<br></b>{{ todo.date.strftime('%a, %b %-d, %Y') }}
+				</td>
+				<td>
+					{%- for user in todo.users %}
+					<span class="label label-info sm-buffer">
+					{{ user.fname }} {{ user.lname }}</span>
+					{%- endfor %}
+				</td>
+			</tr>
+			{% endif %}
+		    {%- endfor %}
+		</table>
+		<div class="panel-footer">
+			<button type="button" data-toggle="modal" data-target="#confirmclear" class="btn btn-danger btn-sm">
+			<i class="fa fa-trash-o" aria-hidden="true"></i> Clear Past Events
+			</button>
+		</div>
+	</div>
+		
+
+		 <!-- "Delete All" modal-->
+		<div id="confirmclear" class="modal fade" role="dialog">
+			  <div class="modal-dialog">   
+			    <div class="modal-content">
+			      <div class="modal-body">
+			        <h4 class="modal-title">Are you sure?</h4>
+			        All past events will be deleted.<br>
+			        <button type="button" class="btn btn-default top-buffer" data-dismiss="modal">Close</button>
+			        <a href="{{ url_for('clear') }}" class="btn btn-danger top-buffer" >
+						<i class="fa fa-trash-o" aria-hidden="true"></i> Clear Past Events</a>
+				  </div>
+			    </div>
+			
+			  </div>
+		</div>
+		
+		
+		
+  
+
+
+</form>
+
+{% endblock %}

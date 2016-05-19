@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% block body %}
+<title>Log In - OppApp</title>
+<form action="" method=post class="form-horizontal">
+	  
+<div class="col-md-6 col-md-offset-3">
+	<h2>Log In</h2>
+	<div class="well well-md">
+	
+
+	  <label for="email">Email:</label>
+	  <input type="text" id="email" name="email" class="form-control"
+		placeholder="Enter Username" required>
+		
+	  <label for="password">Password:</label>
+	  <input type="password" id="password" name="password" class="form-control"
+		placeholder="Enter Password" required>
+	  <br>
+      <input type="checkbox" id="remember_me" name="remember_me"> Remember Me <br><br>
+
+      <button type="submit" class="btn btn-success">Log In</button>
+
+	</div>
+</div>
+
+</form>
+
+{% endblock %}

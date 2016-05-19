@@ -1,0 +1,63 @@
+{% extends "layout.html" %}
+{% block body %}
+<title>Register - OppApp</title>
+<form action="" method=post class="form-horizontal">
+	
+<div class="col-md-6 col-md-offset-3">
+	<h2>Sign Up </h2>
+	<div class="well well-md">
+		<div class="container-fluid">
+			
+			
+            <div class="row sm-buffer">
+				<div class="col-md-6">
+					<label for="fname">First:</label>
+					<input type="text" id="fname" name="fname" class="form-control"
+		            placeholder="First Name" value="{{ request.form.fname }}" required>
+				</div>
+				<div class="col-md-6">
+					<label for="lname">Last:</label>
+					<input type="text" id="lname" name="lname" class="form-control"
+		            placeholder="Last Name" value="{{ request.form.lname }}" required>
+				</div>
+			</div>
+			
+			<div class="row sm-buffer">
+				<div class="col-md-12">
+					<label for="email">GCC Email:</label>
+		            <input type="email" id="email" name="email" class="form-control"
+						placeholder="Enter Email" value="{{ request.form.email }}" required>
+		            <label for="email">GCC ID:</label>
+					<input type="text" id="gccid" name="gccid" class="form-control"
+						placeholder="Enter ID" value="{{ request.form.gccid }}" required>
+				</div>
+			</div>
+		
+			<div class="row sm-buffer">
+				<div class="col-md-12">
+					<label for="password">Password:</label>
+					<input type="password" id="password" name="password" class="form-control"
+						placeholder="Create Password" value="{{ request.form.password }}" required>
+				</div>
+			</div>
+			
+			<div class="row sm-buffer">
+				<div class="col-md-12">
+					<input type="password" id="password2" name="password2" class="form-control"
+						placeholder="Repeat Password" value="{{ request.form.password2 }}" required>
+				</div>
+			</div>
+		
+			<div class="row top-buffer">
+				<div class="col-md-12">
+					<button type="submit" class="btn btn-success">Sign Up</button>
+					<input type="checkbox" id="admin" name="admin"> Admin?
+				</div>
+			</div>
+			
+		</div>
+	</div>
+</div>
+
+</form>
+{% endblock %}
