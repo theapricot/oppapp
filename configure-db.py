@@ -1,3 +1,3 @@
-from todoapp import app as application
-from todoapp import *
+from oppapp import app as application
+from oppapp import *
 db.create_all()
