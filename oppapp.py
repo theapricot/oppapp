@@ -1,6 +1,6 @@
 # IMPORTS #
 from datetime import datetime
-from natural import date as ndate
+import date as ndate
 from flask import Flask,session, request, flash, url_for, redirect, render_template, abort ,g, make_response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import asc
