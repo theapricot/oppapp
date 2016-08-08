@@ -4,87 +4,196 @@
 
 <form action="" method=post>
 	
-		<!-- AVAILABLE EVENTS -->
-		{% if g.user.cansignup %}
-		<div class="panel panel-default">
+		<!-- PAST EVENTS -->
+
+<!--
+   				<div class="panel panel-default">
 			<div class="panel-heading">
-				<b>Available Events</b>
+				<b>My Past Events</b>
 			</div>
-			
 			<table class="table table-hover">
-			      <tr>
-					  {% if g.user.cansignup %}<th></th>{% endif %}
-			        <th>Event</th>
-			        <th>Date</th>
-			        <th>Time</th>
-			        <th>Location</th>
-			      </tr>
-			      {%- for todo in todos %}
-			      <tr>
-					{% if g.user.cansignup %}
-					<td><button name="add" value="{{ todo.id }}" type="submit" class="btn btn-xs btn-success">
-						<i class="fa fa-plus" aria-hidden="true"></i>
-					</button></td>
+				<thead>
+					<td><b>Event</b></td>
+					<td><b>Techs</b></td>
+					{%- for event in myevents %}
+					{% if event.get_timeline() == 2 %}
+					<tr>
+						<td>{{ event.name }}</td>
+						<td>
+							{%- for user in event.users %}
+							{% if user.id == g.user.id %}
+							<span class="label label-primary">Me</span>
+							{% else %}
+							<span class="label label-default">{{ user.fname }} {{ user.lname }}</span>
+							{% endif %}
+							{%- endfor %}
+						</td>
+					</tr>
 					{% endif %}
-					
-					<td>
-					<b>{{ todo.name }}</b>
-					{% if todo.users|length < todo.techsneeded %}
-						<span class="label label-{% if todo.users|length == 0 %}danger{% else %}warning{% endif %}">need {{ todo.techsneeded - todo.users|length }} more</span>
-					{% endif %}
-					<br>
-					<i>{{ todo.info }}</i>
-					</td>
-					
-			        <td><b>{{ todo.get_natural('d') }}</b><br>{{ todo.date.strftime('%a, %b %-d, %Y') }}</td>
-			        <td><b>{{ todo.get_natural('t') }}</b><br>{{ todo.date.strftime('%-I:%M %p') }} - {{ todo.enddate.strftime('%-I:%M %p') }}</td>
-			        <td>{{ todo.desc }}</td>
-			        </tr>
-		
-			      {%- endfor %}
+					{%- endfor %}
+				</thead>
 			</table>
-		 </div>
-   		{% endif %}
+		</div>
+-->
+   
+	<p class="text-center" style="font-size:12px"><a data-toggle="collapse" href="#past">Past Events</a></p>
+   		
+   		<!-- MY EVENTS 2 -->
+			
+		<!-- Past Events -->
+   		<div id="past" class="panel-group collapse">
+	   		{%- for event in myevents %}
+		   		{% if event.get_timeline() == 2 %}
+					<div class="panel panel-default text-muted">
+						<div class="panel-heading">
+							<b>{{ event.date.strftime('%A, %b %-d, %Y') }}</b>
+							<span class="pull-right text-muted">{{ event.get_natural('d') }}</span>
+						</div>
+						<table class="table table-condensed">
+							<tr>
+								<td>
+									<div class="col-md-2 med-buffer"><b>{{ event.get_shorttime(0) }}</b> - {{ event.get_shorttime(1) }}
+										<p class="text-muted" style="font-size:10px">{{ event.get_natural('t') }}</p>
+									</div>
+									<div class="col-md-5"><p style="font-size:16px"><strong class="text-capitalize">{{ event.name }} @ {{ event.desc }}</strong></p>
+										{% if event.info != "" %} 
+											<code>{{ event.info }}</code>
+										{% endif %}
+									</div>
+									<div class="col-md-5 text-right">
+										{%- for user in event.users %}
+										{% if user.id == g.user.id %}
+										<span class="label label-primary">Me</span>
+										{% else %}
+										<span class="label label-default">{{ user.fname }} {{ user.lname }}</span>
+										{% endif %}
+										{%- endfor %}
+									</div>
+								</td>
+							</tr>
+						</table>
+					</div>
+		   		{% endif %}
+		   	{%- endfor %}
+		</div>
+		
+		<!-- Current events -->
+	   	<div class="panel-group">
+		   	{%- for event in myevents %}
+		   		{% if event.get_timeline() == 1 %}
+					<div class="panel panel-danger">
+						<div class="panel-heading">
+							<b>Today, {{ event.date.strftime('%A, %b %-d, %Y') }}</b>
+							<span class="pull-right">Happening Now</span>
+						</div>
+						<table class="table table-condensed">
+							<tr>
+								<td>
+									<div class="col-md-2 med-buffer"><b>{{ event.get_shorttime(0) }}</b> - {{ event.get_shorttime(1) }}
+										<p class="text-muted" style="font-size:10px">{{ event.get_natural('t') }}</p>
+									</div>
+									<div class="col-md-10"><p style="font-size:16px"><strong class="text-capitalize">{{ event.name }} @ {{ event.desc }}</strong></p>
+										{% if event.info != "" %} 
+											<code>{{ event.info }}</code>
+										{% endif %}
+									</div>
+								</td>
+							</tr>
+						</table>
+					</div>
+				{% endif %}
+	   		{%- endfor %}
+	   	</div>
+	   	
+	   	<!-- Upcoming events -->
+		<div class="panel-group">
+		   	{%- for event in myevents %}
+		   		{% if event.get_timeline() == 0 %}
+					<div class="panel panel-{% if event.is_today() %}primary{% else %}default{% endif %}">
+						<div class="panel-heading">
+							{% if g.user.cansignup %}
+								<button name="drop" value="{{ event.id }}" type="submit" class="btn btn-xs btn-danger">
+									<i class="fa fa-times" aria-hidden="true"></i> <strong>DROP</strong>
+								</button>
+							{% endif %}
+							<b>{% if event.is_today() %}Today, {% endif %}{{ event.date.strftime('%A, %b %-d, %Y') }}</b>
+							<span class="pull-right {% if event.is_today() %}bg-primary{% else %}text-muted{% endif %}">{{ event.get_natural('d') }}</span>
+						</div>
+						<table class="table table-condensed">
+							<tr>
+								<td>
+									<div class="col-md-2 med-buffer"><b>{{ event.get_shorttime(0) }}</b> - {{ event.get_shorttime(1) }}
+										<p class="text-muted" style="font-size:10px">{{ event.get_natural('t') }}</p>
+									</div>
+									<div class="col-md-5"><p style="font-size:16px"><strong class="text-capitalize">{{ event.name }} @ {{ event.desc }}</strong></p>
+										{% if event.info != "" %} 
+											<code>{{ event.info }}</code>
+										{% endif %}
+									</div>
+									<div class="col-md-5 text-right">
+										{%- for user in event.users %}
+										{% if user.id == g.user.id %}
+										<span class="label label-primary">Me</span>
+										{% else %}
+										<span class="label label-default">{{ user.fname }} {{ user.lname }}</span>
+										{% endif %}
+										{%- endfor %}
+									</div>
+								</td>
+							</tr>
+						</table>
+					</div>
+				{% endif %}
+	   		{%- endfor %}
+	   	</div>
+   		
+   		
+   		
    		
    		
    		
    		<!-- MY EVENTS -->
+   		
+<!--
    		{% if not g.user.cansignup %}
+   		<div>
 		<div class="panel panel-default">
 			<div class="panel-heading">
 				<b>My Events</b>
 				<span class="label label-success med-lbuffer">Confirmed, sign-ups are closed.</span>
 		    </div>
 		{% else %}
+	
 		<div class="panel panel-default">
 			<div class="panel-heading">
 				<b>My Events</b>
 		    </div>
 		{% endif %}
 		    <table class="table table-hover">
-				<tr>
-					{% if g.user.cansignup %}<th></th>{% endif %}
+				<thead>
 					<th>Event</th>
 					<th>Date</th>
 					<th>Time</th>
 					<th>Location</th>
 					{% if not g.user.cansignup %}<th>Techs</th>{% endif %}
-				</tr>
+				</thead>
 				{%- for todo in myevents %}
+				{% if todo.get_timeline() < 2 %}
+			
 				<tr>
-					{% if g.user.cansignup %}
+
 					<td>
-						<button name="drop" value="{{ todo.id }}" type="submit" class="btn btn-xs btn-danger">
-						<i class="fa fa-times" aria-hidden="true"></i>
-						</button>
-					</td>
-					{% endif %}
-					<td>
-						<b>{{ todo.name }}</b>
+						
 						{% if g.user.cansignup %}
+						<button name="drop" value="{{ todo.id }}" type="submit" class="btn btn-xs btn-primary">
+						<i class="fa fa-chevron-left" aria-hidden="true"></i> <strong>{{ todo.name }}</strong>
+						</button>
 						{% if todo.users|length < todo.techsneeded %}
+						<br>
 						<span class="label label-{% if todo.users|length == 0 %}danger{% else %}warning{% endif %}">need {{ todo.techsneeded - todo.users|length }} more</span>
 						{% endif %}
+						{% else %}
+						<strong>{{ todo.name }}</strong>
 						{% endif %}
 						<br>
 						<i>{{ todo.info }}</i>
@@ -96,16 +205,124 @@
 					{% if not g.user.cansignup %}
 					<td>
 						{%- for user in todo.users %}
+						{% if user.id == g.user.id %}
+						<span class="label label-primary">Me</span>
+						{% else %}
 						<span class="label label-info">{{ user.fname }} {{ user.lname }}</span>
+						{% endif %}
 						{%- endfor %}
 					</td>
 					{% endif %}
 
 				</tr>
+				{% endif %}
 				{%- endfor %}
 		    </table> 
 		</div>
-	</div>
+-->
+
+	</div> 
+
+		
+		<div class="container">
+		<!-- PAST EVENTS -->
+		
+		
+		
+		
+
+		<!-- SIGNUPS -->
+		{% if g.user.cansignup %}
+		<p class="text-center" style="font-size:16px"><strong>Available Events</strong></p>
+		<div class="jumbotron">
+			<div class="panel-group">
+			   	{%- for event in leftevents %}
+					{% if event.get_timeline() == 0 %}
+						<div class="panel panel-default text-success">
+							<div class="panel-heading">
+								
+									<button name="add" value="{{ event.id }}" type="submit" class="btn btn-xs btn-success">
+										<i class="fa fa-plus" aria-hidden="true"></i> <strong>SIGN UP</strong>
+									</button>
+							
+								<b>{% if event.is_today() %}Today, {% endif %}{{ event.date.strftime('%A, %b %-d, %Y') }}</b>
+								<span class="pull-right text-muted">{{ event.get_natural('d') }}</span>
+							</div>
+							<table class="table table-condensed">
+								<tr>
+									<td>
+										<div class="col-md-2 med-buffer"><b>{{ event.get_shorttime(0) }}</b> - {{ event.get_shorttime(1) }}
+											<p class="text-muted" style="font-size:10px">{{ event.get_natural('t') }}</p>
+										</div>
+										<div class="col-md-5"><p style="font-size:16px"><strong class="text-capitalize">{{ event.name }} @ {{ event.desc }}</strong></p>
+											{% if event.info != "" %} 
+												<code>{{ event.info }}</code>
+											{% endif %}
+										</div>
+										<div class="col-md-5 text-right">
+											{%- for user in event.users %}
+											{% if user.id == g.user.id %}
+											<span class="label label-primary">Me</span>
+											{% else %}
+											<span class="label label-default">{{ user.fname }} {{ user.lname }}</span>
+											{% endif %}
+											{%- endfor %}
+										</div>
+									</td>
+								</tr>
+							</table>
+						</div>
+					{% endif %}
+		   		{%- endfor %}
+		   	</div>
+	   	</div>
+	   	{% endif %}
+<!--
+		<div class="panel panel-success">
+			<div class="panel-heading">
+				<b>Available Events</b>
+			</div>
+			
+			<table class="table table-hover">
+			      <thead>
+			        <th>Event</th>
+			        <th>Date</th>
+			        <th>Time</th>
+			        <th>Location</th>
+			      </thead>
+			      {%- for todo in todos %}
+			      {% if todo.get_timeline() <2 %}
+			      <tr>
+					
+					<td>
+					<button name="add" value="{{ todo.id }}" type="submit" class="btn btn-xs btn-primary">
+						<strong>{{ todo.name }}</strong> <i class="fa fa-chevron-right" aria-hidden="true"></i> 
+					</button>
+					{% if todo.users|length < todo.techsneeded %}
+					<br>
+						<span class="label label-{% if todo.users|length == 0 %}danger{% else %}warning{% endif %}">need {{ todo.techsneeded - todo.users|length }} more</span>
+					{% endif %}
+					<br>
+					<i>{{ todo.info }}</i>
+					</td>
+					
+			        <td><b>{{ todo.get_natural('d') }}</b><br>{{ todo.date.strftime('%a, %b %-d, %Y') }}</td>
+			        <td><b>{{ todo.get_natural('t') }}</b><br>{{ todo.date.strftime('%-I:%M %p') }} - {{ todo.enddate.strftime('%-I:%M %p') }}</td>
+			        <td>{{ todo.desc }}</td>
+			        </tr>
+				  {% endif %}
+			      {%- endfor %}
+			</table>
+		 </div>
+		 </div>
+   		
+-->
+
+	
+
+
+
+	
 </form>
 
 {% endblock %}

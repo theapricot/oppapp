@@ -31,6 +31,7 @@
 			</td>
 		</tr>
 		{% endif %}
+		
 		<div id="chgpwd" class="modal fade" role="dialog">
 		  <div class="modal-dialog">
 		
@@ -62,7 +63,12 @@
 		  </div>
 		</div>
 		{% endif %}
-		
+		<tr>
+			<td>Events:</td>
+			<td>
+				{{ usr.opps|length }}
+			</td>
+		</tr>
 		</table>
 	</div>
 	

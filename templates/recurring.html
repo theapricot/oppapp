@@ -1,31 +1,12 @@
 {% extends "layout.html" %}
 {% block body %}
-<title>All Events - Opp</title>
 
 <form action="" method=post>
-<div class="panel panel-default">
-	<div class="panel-heading" style="height: 60px">
-		<table class="table table-condensed">
-			<thead>
-				<td style="font-size:20px"><b>Upcoming Events</b></td>
-				<td style="text-align:right">	     
-			    {% if allcansignup == True %}
-					<button type="submit" name="togglesignup" class="btn btn-sm btn-default">
-						<span class="text-success"><i class="fa fa-toggle-on" aria-hidden="true"></i> Sign-Ups Open</span>
-					</button>
-				{% else %} 
-					<button type="submit" name="togglesignup" class="btn btn-sm btn-default">
-						<span class="text-danger"><i class="fa fa-toggle-off" aria-hidden="true"></i> Sign-Ups Closed</span>
-					</button>
-				{% endif %}
-				</td>
-			</thead>
-		</table>
-	</div> <!-- end panel heading -->
-   
-    <table class="table table-hover">
-        {%- for todo in todos %}
-        {% if todo.get_timeline() < 2 %}
+	
+	<div class="panel panel-default">
+		<div class="panel-heading" style="font-size:20px"><b>Weekly Events</b></div>
+		<table class="table table-hover">
+			{%- for todo in events %}
 		<tr {% if todo.get_timeline() == 1 %}class="warning"{% endif %}>
 			<td><b><a href="/todos/{{ todo.id }}">{{ todo.name }}
 				<br></a></b>{{ todo.date.strftime('%a, %b %-d, %Y') }}<br><small>{{ todo.get_natural('d') }}</small>
@@ -105,81 +86,10 @@
 
 			</td>
 		</tr>
-      {% endif %}
       {%- endfor %}
-    </table>
-    <div class="panel-footer">
-    <!-- bottom buttons -->
-		<a href="{{ url_for('new') }}" class="btn btn-primary">
-		<i class="fa fa-plus" aria-hidden="true"></i> New Event
-		</a>
-		<div class="btn-group">
-			<a href="{{ url_for('download') }}" class="btn btn-default">
-				<i class="fa fa-table" aria-hidden="true"></i> CSV Receipt
-			</a>
-			<a href="{{ url_for('mailreceipt') }}" class="btn btn-default">
-				<i class="fa fa-envelope-o"></i> Email Receipt
-			</a>
-		</div>
-<!--
-		<a href="{{ url_for('recurring') }}" class="btn btn-default pull-right">
-		<i class="fa fa-calendar-o" aria-hidden="true"></i> Weekly Events
-		</a>
--->
-    </div>
-    <!-- End of table -->
-    </div>
-    
-      
-    
-    
-    <!-- Past events -->
-	<div class="panel panel-default">
-		<div class="panel-heading">
-			<td><h4><b>Past Events</b></h4></td>
-		</div>
-		<table class="table table-hover">
-		
-			{%- for todo in todos %}
-			{% if todo.get_timeline() == 2 and not todo.deleted %}
-			<tr>
-				<td><b>{{ todo.name }}
-					<br></b>{{ todo.date.strftime('%a, %b %-d, %Y') }}
-				</td>
-				<td>
-					{%- for user in todo.users %}
-					<span class="label label-info sm-buffer">
-					{{ user.fname }} {{ user.lname }}</span>
-					{%- endfor %}
-				</td>
-			</tr>
-			{% endif %}
-		    {%- endfor %}
 		</table>
-		<div class="panel-footer">
-			<button type="button" data-toggle="modal" data-target="#confirmclear" class="btn btn-danger btn-sm">
-			<i class="fa fa-trash-o" aria-hidden="true"></i> Clear Past Events
-			</button>
-		</div>
-	</div>
-		
 
-		 <!-- "Delete All" modal-->
-		<div id="confirmclear" class="modal fade" role="dialog">
-			  <div class="modal-dialog">   
-			    <div class="modal-content">
-			      <div class="modal-body">
-			        <h4 class="modal-title">Are you sure?</h4>
-			        All past events will be deleted.<br>
-			        <button type="button" class="btn btn-default top-buffer" data-dismiss="modal">Close</button>
-			        <a href="{{ url_for('clear') }}" class="btn btn-danger top-buffer" >
-						<i class="fa fa-trash-o" aria-hidden="true"></i> Clear Past Events</a>
-				  </div>
-			    </div>
-			
-			  </div>
-		</div>
-	
+</div>
 </form>
 
 {% endblock %}

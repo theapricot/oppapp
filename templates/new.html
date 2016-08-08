@@ -12,16 +12,84 @@
 		
 		<label for="location">Location:</label>
 	    <input type="text" name="location" class="form-control" placeholder="Location" value="{{ request.form.location }}" required>
-	
-		<div class="input-group date" id="date" data-provide="datepicker-inline" data-date-format="mm/dd/yyyy">
-			<input type="hidden" name="date" class="datepicker form-control" placeholder="Date" value="{{ request.form.date }}" required>
-		</div>
+		
+		<!-- DATE PICKER -->
+		<br>
+<!--
+		<div class="panel-group" id="accordion">
+-->
+	    <div class="panel panel-default">
+	      <div class="panel-heading">
+	        <h4 class="panel-title">
+				Date
+<!--
+	          <a data-toggle="collapse" data-parent="#accordion" href="#collapse-once">Occurs Once</a>
+-->
+	        </h4>
+	      </div>
+	      <div id="collapse-once" class="panel-collapse collapse in">
+	        <div class="panel-body">
+				<div class="input-group date" id="date" data-provide="datepicker-inline" data-date-format="mm/dd/yyyy">
+					<input type="hidden" name="date" class="datepicker form-control" placeholder="Date" value="{{ request.form.date }}" required>
+				</div>
+	        </div>
+	      </div>
+	     </div>
+	    
+<!--
+	</div>
+	    <div class="panel panel-default">
+	      <div class="panel-heading">
+	        <h4 class="panel-title">
+	          <a data-toggle="collapse" data-parent="#accordion" href="#collapse-recur">Occurs Weekly</a>
+	        </h4>
+	      </div>
+	      <div id="collapse-recur" class="panel-collapse collapse">
+	        <div class="panel-body">
+			     <div class="btn-group btn-group-justified" data-toggle="buttons">
+					  <label class="btn btn-default">
+						  <input type="radio" name="options" value="0" autocomplete="off"> S
+					  </label>
+					  <label class="btn btn-default">
+					      <input type="radio" name="options" value="1" autocomplete="off"> M
+					  </label>
+					  <label class="btn btn-default">
+					      <input type="radio" name="options" value="2" autocomplete="off"> T
+					  </label>
+					  <label class="btn btn-default">
+						  <input type="radio" name="options" value="3" autocomplete="off"> W
+					  </label>
+					  <label class="btn btn-default">
+					      <input type="radio" name="options" value="4" autocomplete="off"> T
+					  </label>
+					  <label class="btn btn-default">
+					      <input type="radio" name="options" value="5" autocomplete="off"> F
+					  </label>
+					  <label class="btn btn-default">
+					      <input type="radio" name="options" value="6" autocomplete="off"> S
+					  </label>
+				</div>
+								
+	        </div>
+	      </div>
+	    </div>
+		
+-->
 		<script>
 			$('#date').datepicker({
 			    startDate: '+d'
 			})
+			
+			$(function() {
+			  $('.collapse').on('shown.bs.collapse', function (e) {
+			        document.getElementById("recurring").value = e.currentTarget.id;
+			    })
+			})
 		</script>
-	
+		<input type="hidden" name="recurring" id="recurring" value="collapse-once">
+		
+		<!-- TIME PICKER -->
+		<br>
 		<div class="bootstrap-timepicker timepicker">
 			<label for="timepicker">Start Time:</label>
 			<input name="time" id="timepicker" class="form-control" data-provide="timepicker" data-template="false" 

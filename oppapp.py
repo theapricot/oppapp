@@ -1,5 +1,6 @@
 # IMPORTS #
 from datetime import datetime
+from datetime import date
 import date as ndate
 from flask import Flask,session, request, flash, url_for, redirect, render_template, abort ,g, make_response
 from flask_sqlalchemy import SQLAlchemy
@@ -7,9 +8,8 @@ from sqlalchemy import asc
 from flask.ext.login import LoginManager
 from flask.ext.login import login_user , logout_user , current_user , login_required
 from flask.ext import excel
-from pyexcel.ext import xlsx
 from werkzeug.security import generate_password_hash, check_password_hash
-import ast, re
+import ast, re, uuid
 
 # INITIALIZATION #
 app = Flask(__name__)
@@ -53,6 +53,7 @@ class Users(db.Model):
     gccid = db.Column('gccid', db.Integer, unique=True) # user's grove city college student id
     settings = db.Column('settings', db.String) # settings, stored as JSON/python dict encoded as string
     registered_on = db.Column('registered_on' , db.DateTime) # date user registered (not really used)
+    
     opps = db.relationship('Opps' , secondary = relationship_table, backref='users') # connects user to his or her opps
 
     # user methods
@@ -65,7 +66,8 @@ class Users(db.Model):
         self.cansignup = True
         self.fname = ''
         self.lname = ''
-        self.settings = "{'bcc':0}"
+        self.settings = "{'bcc':0,'pastevents':{}}"
+        
 
     def set_password(self , password):
         self.password = generate_password_hash(password)
@@ -96,6 +98,13 @@ class Users(db.Model):
         # returns a specified user setting
         return ast.literal_eval(self.settings)[setting]
         
+    def chg_setting(self, name, val):
+	    sets = ast.literal_eval(self.settings)
+	    sets[name] = val
+	    self.settings = str(sets)
+	    db.session.commit()
+       
+        
 # OPPS CLASS #
 class Opps(db.Model):
     id = db.Column(db.Integer, primary_key=True) # opp internal id for app
@@ -105,6 +114,9 @@ class Opps(db.Model):
     techsneeded = db.Column(db.Integer) # the opposite of the number of techs that aren't needed
     desc = db.Column(db.String) # event location
     info = db.Column(db.String) # event extra information 
+    uuid = db.Column(db.String)
+    deleted = db.Column(db.Boolean)
+    recurring = db.Column('recurring', db.Boolean) # recurring events, like chapels
     
     def __init__(self, name, desc):
         # more boring initialization stuff
@@ -114,6 +126,9 @@ class Opps(db.Model):
         self.desc = desc
         self.info = ""
         self.techsneeded = 0
+        self.uuid = uuid.uuid4().hex
+        self.deleted = False
+        self.recurring = 0
         
     def get_timeline(self):
         # returns a number based on how now is related to when the event is
@@ -122,14 +137,37 @@ class Opps(db.Model):
             return 0 # if event is upcoming
         elif now > self.date and now < self.enddate:
             return 1 # if event is in progress
-        else:
+        elif now > self.enddate:
             return 2 # if event is over
+    
+    def get_timesecs(self):
+        delta = self.date - datetime.now()
+        return delta.seconds + delta.days*24*3600
     
     def get_natural(self, dort):
         if dort == 'd':
             return ndate.duration(self.date)
         elif dort == 't':
-            return ndate.delta(self.enddate, self.date)[0] + ' long'
+            return ndate.delta(self.enddate, self.date)[0]
+    
+    def is_today(self):
+        if self.date.date() == date.today():
+            return 1
+    
+    def get_shorttime(self, beginningorend):
+        if beginningorend == 0:
+            d = self.date
+        else:
+            d = self.enddate
+        if d.strftime('%M') == '00':
+            timepre = d.strftime('%-I')
+        else:
+            timepre = d.strftime('%-I:%M')
+        if d.strftime('%p') == 'AM':
+            timesuf = 'A'
+        else:
+            timesuf = 'P'
+        return timepre + timesuf
     
 # MAIN EVENTS PAGE #
 @app.route('/', methods=['GET', 'POST'])
@@ -156,6 +194,7 @@ def index():
             if 'removefromevent' in request.form: # if tech is removed from an event
                 [usr, opp] = getuserevent('removefromevent')
                 usr.opps.remove(opp)
+                flash(usr.fname + ' ' + usr.lname + ' removed from "' + opp.name + '"', 'success')
             
             if 'movetoevent' in request.form: # if tech is moved to different event
                 [usrid, frmid, toid] =request.form['movetoevent'].split(',')
@@ -164,6 +203,7 @@ def index():
                 to = Opps.query.get(int(toid))
                 usr.opps.remove(frm)
                 usr.opps.append(to)
+                flash(usr.fname + ' ' + usr.lname + ' moved from "' + frm.name + '" to "' + to.name + '"', 'success')
                 
             if 'togglesignup' in request.form: # if "sign-ups open/closed" button is clicked
                 if allcansignup():
@@ -191,14 +231,25 @@ def index():
     # if a button is not clicked, i.e. the page is just loaded normally
     if g.user.is_editor():
         # load editor page with all events
-        todos = Opps.query.order_by(asc(Opps.date)).all() 
+        todos = Opps.query.order_by(asc(Opps.date)).filter(Opps.recurring == 0).all() 
         return render_template('index_editor.html',todos=todos, allusers=allusers, allcansignup=allcansignup() )
     else:
         # load normal page, send user's chosen events and available events separately
         usr = Users.query.get(g.user.id)
         leftevents = db.session.query(Opps).filter(~Opps.users.any(Users.id == g.user.id)).order_by(asc(Opps.date)).all()
         myevents = db.session.query(Opps).filter(Opps.users.any(Users.id == g.user.id)).order_by(asc(Opps.date)).all()
-        return render_template('index.html',todos = leftevents, myevents = myevents)
+        return render_template('index.html',leftevents = leftevents, myevents = myevents, today = datetime.now())
+
+# RECURRING EVENT PAGE #
+@app.route('/recurring', methods=['GET', 'POST'])
+@login_required
+def recurring():
+    if not g.user.is_editor():
+        flash('You must be an editor to access this page.','danger')
+        return redirect(url_for('index'))
+    events = Opps.query.order_by(asc(Opps.date)).filter(Opps.recurring == 1).all() 
+    return render_template('recurring.html', events = events)
+        
 
 # NEW EVENT PAGE #
 @app.route('/new', methods=['GET', 'POST'])
@@ -207,41 +258,50 @@ def new():
     if request.method == 'POST': # form was submitted
         # do a whole bunch of form verification (is there a better way to do this?)
         if not request.form['title']:
-            flash('Title is required', 'error')
+            flash('Title is required', 'danger')
         elif not request.form['location']:
-            flash('Location is required', 'error')
-        elif not request.form['date']:
-            flash('Date is required', 'error')
+            flash('Location is required', 'danger')
+        #elif not request.form['date']:
+        #    flash('Date is required', 'danger')
         elif not request.form['time']:
-            flash('Start time is requried', 'error')
-        elif datetime.strptime(request.form['date']+request.form['time'],'%m/%d/%Y%I:%M %p') < datetime.now():
-            flash('Event must occur in the future.')
+            flash('Start time is requried', 'danger')
+        #elif datetime.strptime(request.form['date']+request.form['time'],'%m/%d/%Y%I:%M %p') < datetime.now():
+        #    flash('Event must occur in the future.', 'danger')
         elif not request.form['endtime']:
-            flash('End time is required', 'error')
+            flash('End time is required', 'danger')
         elif not request.form['ntechs']:
-            flash('Number of techs is required', 'error')
+            flash('Number of techs is required', 'danger')
 
         else: # finally, if we pass inspection, add the event to the database
             title = request.form['title']
             todo = Opps(title, request.form['location'])
+            if request.form['recurring'] == 'collapse-recur':
+                todo.recurring = 1
+                todo.date = datetime.strptime(request.form['options'],'%w')
+                todo.enddate = datetime.strptime(request.form['options'],'%w')
+                flash(request.form['options'])
+            elif request.form['recurring'] == 'collapse-once':
+                todo.recurring = 0
+                todo.date = datetime.strptime(request.form['date']+request.form['time'],'%m/%d/%Y%I:%M %p')
+                todo.enddate = datetime.strptime(request.form['date']+request.form['endtime'],'%m/%d/%Y%I:%M %p')
             todo.user = g.user
-            todo.date = datetime.strptime(request.form['date']+request.form['time'],'%m/%d/%Y%I:%M %p')
-            todo.enddate = datetime.strptime(request.form['date']+request.form['endtime'],'%m/%d/%Y%I:%M %p')
             todo.techsneeded = int(request.form['ntechs'])
             todo.info = request.form['info']
             db.session.add(todo)
             db.session.commit()
-            flash('"' + title + '" was successfully created')
+            flash('"' + title + '" was successfully created', 'success')
+            flash(todo.uuid,'info')
             return redirect(url_for('index'))
         
     return render_template('new.html') # page was loaded
 
+    
 # EDIT EVENT PAGE #
 @app.route('/todos/<int:todo_id>', methods = ['GET' , 'POST'])
 @login_required
 def show_or_update(todo_id):
     if not g.user.is_editor():
-        flash('You are not allowed to edit.')
+        flash('You are not allowed to edit.', 'danger')
         return redirect(url_for('index'))
     todo_item = Opps.query.get(todo_id)
     if request.method == 'GET':
@@ -254,15 +314,15 @@ def show_or_update(todo_id):
         todo_item.enddate = datetime.strptime(request.form['date']+request.form['endtime'],'%m/%d/%Y%I:%M %p')
         todo_item.techsneeded = request.form['ntechs']
         todo_item.info = request.form['info']
-        flash('Event updated.')
+        flash('Event updated.', 'info')
     else:
         db.session.delete(todo_item)
-        flash('Event deleted.')
+        flash('Event deleted.', 'info')
     #print request.form['date']
     #todo_item.done  = ('done.%d' % todo_id) in request.form
     db.session.commit()
     return redirect(url_for('index'))
-    flash('You are not authorized to edit this todo item','error')
+    flash('You are not authorized to edit this todo item','danger')
     return redirect(url_for('show_or_update',todo_id=todo_id))
     
 # CLEAR PAST EVENTS METHOD #
@@ -271,9 +331,9 @@ def clear():
     opps = Opps.query.all()
     for opp in opps:
         if opp.get_timeline() == 2:
-            db.session.delete(opp)
+            opp.deleted = True
     db.session.commit()
-    flash('Cleared Past Events.')
+    flash('Cleared Past Events.','info')
     return redirect(url_for('index'))
     
 # DOWNLOAD CSV RECEIPT METHOD #
@@ -313,11 +373,11 @@ def profile(uid):
                 if request.form['newpwd1'] == request.form['newpwd2']:
                     g.user.set_password(request.form['newpwd1'])
                     db.session.commit()
-                    flash('Password successfully changed.')
+                    flash('Password successfully changed.','success')
                 else:
-                    flash('New passwords do not match.')
+                    flash('New passwords do not match.','danger')
             else:
-                flash('Old password incorrect')
+                flash('Old password incorrect','danger')
                 
         if 'bcc' in request.form:
             if request.form['bcc'] == "on":
@@ -326,39 +386,41 @@ def profile(uid):
                 changesetting(g.user, 'bcc', 0)
 
     users = Users.query.filter(Users.id != uid).order_by(asc(Users.lname)).all()
-    #for usr in Users.query.all():
-    #    usr.settings = "{'bcc':0}"
+    #for usr in Opps.query.all():
+        #usr.recurring = 0
     #db.session.commit()
-    return render_template('profile.html', users = users, usr = Users.query.get(uid))
+    usr = Users.query.get(uid)
+    #history = Opps.query.filter(Opps.uuid.in_(usr.get_setting('pastevents'))).all()
+    return render_template('profile.html', users = users, usr = usr)
 
 # REGISTER NEW USER PAGE #
 @app.route('/register' , methods=['GET','POST'])
 def register():
     if request.method == 'GET':
         return render_template('register.html')
-    if 'admin' in request.form:
-        isadmin = 1
-    else:
-        isadmin = 0
+    #if 'admin' in request.form:
+    #    isadmin = 1
+    #else:
+    #    isadmin = 0
     if not request.form['fname'] or not request.form['lname']:
-        flash ('Please enter your name.')
+        flash ('Please enter your name.','danger')
     elif not request.form['email']:
-        flash('Please enter an email address.')
+        flash('Please enter an email address.','danger')
     elif not re.match(r"(.*@gcc\.edu)", request.form['email']):
-        flash('Please enter a valid GCC email address.')
+        flash('Please enter a valid GCC email address.','danger')
     elif not re.match(r"(\d{6})", request.form['gccid']):
-        flash('Please enter a valid GCC ID number')
+        flash('Please enter a valid GCC ID number','danger')
     elif request.form['password'] != request.form['password2']:
-        flash('Passwords do not match!')
+        flash('Passwords do not match!','danger')
     
     else:
-        user = Users(request.form['password'],request.form['email'], isadmin)
+        user = Users(request.form['password'],request.form['email'], 0)
         user.fname = request.form['fname'].title()
         user.lname = request.form['lname'].title()
         user.gccid = int(request.form['gccid'])
         db.session.add(user)
         db.session.commit()
-        flash('User successfully registered')
+        flash('User successfully registered','success')
         return redirect(url_for('login'))
     return render_template('register.html')
 
@@ -375,10 +437,10 @@ def login():
         remember_me = True
     registered_user = Users.query.filter_by(email=email).first()
     if registered_user is None:
-        flash('Username is invalid' , 'error')
+        flash('Username is invalid' , 'danger')
         return redirect(url_for('login'))
     if not registered_user.check_password(password):
-        flash('Password is invalid','error')
+        flash('Password is invalid','danger')
         return redirect(url_for('login'))
     login_user(registered_user, remember = remember_me)
     #flash('Logged in successfully')

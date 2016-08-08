@@ -20,12 +20,20 @@ body {
 .med-buffer { margin-top:10px; }
 .med-lbuffer { margin-left:10px; }
 .sm-buffer { margin-top:5px; }
+.sm-bbuffer { margin-bottom:5px; }
 
 .vcenter {
     display: inline-block;
     vertical-align: middle;
     float: none;
 }
+
+.vcenterr {
+    display: inline-block;
+    vertical-align: bottom;
+    float: none;
+}
+
 @font-face {
     font-family: homestead;
     src: /static/Homestead-Display.otf;
